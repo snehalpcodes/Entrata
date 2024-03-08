@@ -1,3 +1,4 @@
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,15 +20,16 @@ public class Entrata {
     public WebDriverWait wait;
     JavascriptExecutor jsExecutor;
     @Before
-    public void setUp() {
+    public void setUp() throws InterruptedException {
         ChromeOptions chromeoptions =new ChromeOptions();
         chromeoptions.setPageLoadStrategy(PageLoadStrategy.NORMAL);
         driver=new ChromeDriver(chromeoptions);
+        driver.manage().window().maximize();
         String url="https://www.entrata.com/";
         driver.get(url);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
         wait = new WebDriverWait(driver,Duration.ofSeconds(30));
-        testBaseCamp(driver);
+        testBaseCamp(driver, wait);
     }
 
     public void waitForElement(WebDriverWait wait){
@@ -93,15 +95,32 @@ public class Entrata {
     public void waitUntilElementTobeClickable(WebElement element){
         wait.until(ExpectedConditions.elementToBeClickable(element));
     }
-    public void testBaseCamp(WebDriver driver) {
+    public void testBaseCamp(WebDriver driver,WebDriverWait wait) throws InterruptedException {
+        Actions actions = new Actions(driver);
+        wait =new WebDriverWait(driver,Duration.ofSeconds(30));
+//        Test Product
+        WebElement productHead=driver.findElement(By.xpath("(//*[@class='main-nav-link'])[1]"));
+        actions.moveToElement(productHead).perform();
+        Thread.sleep(2000);
+        WebElement resisdentPay= driver.findElement(By.xpath("//div[@class='nav-group']/a[contains(text(),'ResidentPay')]"));
+        wait.until(ExpectedConditions.elementToBeClickable(resisdentPay));
+        resisdentPay.click();
+        WebElement resisdentHeadline= driver.findElement(By.xpath("//div[@class='product-text']"));
+        Assert.assertTrue(resisdentHeadline.isDisplayed());
+
+//       Test Base Camp Scenarios
         driver.findElement(By.xpath("//*[@class='header-nav-item']/*[contains(text(),'Base Camp')]")).click();
         System.out.println("Test if switching to correct window");
+
 //        Switch control to child window
         switchTodWindow("child");
         driver.findElement(By.xpath("(//a/*[contains(text(),'Register Now')])[1]")).click();
+        Thread.sleep(3000);
 //      Fill the form
-        Actions actions = new Actions(driver);
         WebElement firstName=driver.findElement(By.xpath("//input[@aria-label='First Name']"));
+        wait.until(ExpectedConditions.elementToBeClickable(firstName));
+//        actions.moveToElement(firstName).perform();
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", firstName);
         firstName.sendKeys("snehal");
         WebElement lastName=driver.findElement(By.xpath("//input[@aria-label='Last Name']"));
         lastName.sendKeys("snehal");
@@ -115,6 +134,7 @@ public class Entrata {
         emailField.sendKeys("snehal.pimpalkar");
         WebElement mobField= driver.findElement(By.xpath("//input[@aria-label='Mobile']"));
         mobField.sendKeys("7798455465");
+
 // Asserting Error message for incorrect email id
         WebElement errormsg= driver.findElement(By.xpath("//*[@role='alert']"));
         Assert.assertTrue(errormsg.isDisplayed());
@@ -122,5 +142,9 @@ public class Entrata {
 //        actions.moveToElement(element).perform();
         WebElement agendaHead= driver.findElement(By.xpath("//div/h2[contains(text(),'Agenda')]"));
         Assert.assertTrue(agendaHead.isDisplayed());
+    }
+    @After
+    public void quit(){
+        driver.quit();
     }
 }
